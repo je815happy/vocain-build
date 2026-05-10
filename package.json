@@ -1,0 +1,50 @@
+{
+  "name": "vocain",
+  "version": "1.0.0",
+  "description": "Vocain - 영어 단어 학습 앱",
+  "main": "main.js",
+  "author": "Vocain",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --x64",
+    "build-dir": "electron-builder --win --x64 --dir"
+  },
+  "build": {
+    "appId": "com.vocain.app",
+    "productName": "Vocain",
+    "copyright": "Copyright © 2024 Vocain",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "index.html",
+      "assets/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Vocain",
+      "installerLanguages": ["ko_KR", "en_US"],
+      "language": "1042"
+    }
+  },
+  "devDependencies": {
+    "electron": "^36.2.1",
+    "electron-builder": "^26.0.12"
+  }
+}

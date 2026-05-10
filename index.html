@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vocain</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --teal:#1D9E75;--teal-l:#E1F5EE;--teal-m:#9FE1CB;--teal-d:#0F6E56;
+  --coral:#D85A30;--coral-l:#FAECE7;--coral-m:#F5C4B3;--coral-d:#993C1D;
+  --blue:#378ADD;--blue-l:#E6F1FB;--blue-d:#185FA5;
+  --g50:#F8F8F6;--g100:#F0EFE9;--g200:#D3D1C7;--g300:#B4B2A9;
+  --g400:#888780;--g700:#444441;--g900:#1C1C1A;--white:#fff;
+  --r:14px;--rs:8px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--white);color:var(--g900);min-height:100vh;display:flex;flex-direction:column}
+
+/* ── HEADER ── */
+header{padding:14px 28px;border-bottom:1.5px solid var(--g100);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--white);z-index:200}
+.logo{font-family:'DM Serif Display',serif;font-size:24px;letter-spacing:-0.5px}
+.logo span{color:var(--teal)}
+.header-right{display:flex;align-items:center;gap:10px}
+.mode-pill{font-size:12px;font-weight:600;padding:4px 14px;border-radius:20px;letter-spacing:.3px}
+.mode-pill.teacher{background:var(--blue-l);color:var(--blue-d)}
+.mode-pill.student{background:var(--teal-l);color:var(--teal-d)}
+.btn-switch{font-size:12px;border:1.5px solid var(--g200);background:none;border-radius:20px;padding:4px 14px;cursor:pointer;color:var(--g400);font-family:'DM Sans',sans-serif;transition:all .2s}
+.btn-switch:hover{border-color:var(--g400);color:var(--g700)}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex:1;overflow:hidden}
+.sidebar{width:240px;border-right:1.5px solid var(--g100);padding:20px 16px;display:flex;flex-direction:column;gap:4px;overflow-y:auto;flex-shrink:0}
+.content{flex:1;overflow-y:auto;padding:32px}
+.content-inner{max-width:680px;margin:0 auto}
+
+/* ── SIDEBAR ── */
+.sidebar-section{font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--g300);text-transform:uppercase;padding:12px 10px 6px;margin-top:8px}
+.sidebar-section:first-child{margin-top:0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:500;color:var(--g700);transition:all .15s;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--g50);color:var(--g900)}
+.nav-item.active{background:var(--teal-l);color:var(--teal-d)}
+.nav-item .ni{font-size:16px;width:20px;text-align:center}
+.nav-badge{margin-left:auto;font-size:11px;font-weight:600;background:var(--g100);color:var(--g400);padding:2px 7px;border-radius:10px}
+.nav-badge.red{background:var(--coral-l);color:var(--coral-d)}
+
+/* ── SCREENS ── */
+.screen{display:none;animation:fadeUp .25s ease}
+.screen.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── COMMON COMPONENTS ── */
+h2.page-title{font-family:'DM Serif Display',serif;font-size:28px;margin-bottom:6px}
+p.page-sub{font-size:14px;color:var(--g400);margin-bottom:28px;line-height:1.5}
+.section-label{font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--g400);margin-bottom:10px;display:block}
+.card{background:var(--white);border:1.5px solid var(--g100);border-radius:var(--r);padding:20px 24px;margin-bottom:16px}
+.card-title{font-size:14px;font-weight:600;color:var(--g900);margin-bottom:4px}
+.card-sub{font-size:12px;color:var(--g400)}
+
+.btn{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;border:none;border-radius:var(--rs);padding:10px 20px;cursor:pointer;transition:all .18s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--teal);color:#fff}
+.btn-primary:hover{background:var(--teal-d)}
+.btn-primary:disabled{background:var(--g200);color:var(--g400);cursor:not-allowed}
+.btn-secondary{background:var(--white);color:var(--g700);border:1.5px solid var(--g200)}
+.btn-secondary:hover{border-color:var(--g400)}
+.btn-danger{background:var(--coral-l);color:var(--coral-d)}
+.btn-danger:hover{background:var(--coral-m)}
+.btn-lg{padding:13px 28px;font-size:15px;font-weight:600}
+
+input[type=text],input[type=password],textarea,select{
+  border:1.5px solid var(--g200);border-radius:var(--rs);padding:9px 13px;
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--g900);background:var(--white);
+  transition:border-color .18s;width:100%
+}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--teal)}
+select{cursor:pointer}
+
+/* ── LOGIN ── */
+#screen-login{display:flex;align-items:center;justify-content:center;min-height:80vh}
+.login-box{width:380px;text-align:center}
+.login-box .logo-big{font-family:'DM Serif Display',serif;font-size:48px;margin-bottom:8px}
+.login-box .logo-big span{color:var(--teal)}
+.login-box p{font-size:14px;color:var(--g400);margin-bottom:32px}
+.login-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+.login-card{border:1.5px solid var(--g100);border-radius:var(--r);padding:24px 16px;cursor:pointer;transition:all .2s;text-align:center}
+.login-card:hover,.login-card.sel{border-color:var(--teal);background:var(--teal-l)}
+.login-card .lc-icon{font-size:32px;margin-bottom:10px;display:block}
+.login-card h3{font-size:14px;font-weight:600;margin-bottom:2px}
+.login-card p{font-size:12px;color:var(--g400)}
+.login-form{text-align:left;display:none}
+.login-form label{font-size:12px;font-weight:600;color:var(--g400);display:block;margin-bottom:5px;margin-top:14px}
+.pin-hint{font-size:11px;color:var(--g300);margin-top:5px}
+
+/* ── TEACHER: WORD SETS ── */
+.wordset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:24px}
+.wordset-card{border:1.5px solid var(--g100);border-radius:var(--r);padding:18px;cursor:pointer;transition:all .2s;position:relative}
+.wordset-card:hover{border-color:var(--teal);box-shadow:0 2px 12px rgba(29,158,117,.08)}
+.wordset-card.add-new{border-style:dashed;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--g400);gap:6px;min-height:120px}
+.wordset-card.add-new:hover{border-color:var(--teal);color:var(--teal)}
+.wordset-card .ws-name{font-weight:600;font-size:14px;margin-bottom:4px}
+.wordset-card .ws-count{font-size:12px;color:var(--g400)}
+.wordset-card .ws-date{font-size:11px;color:var(--g300);margin-top:8px}
+.wordset-actions{display:flex;gap:6px;margin-top:12px}
+.ws-btn{font-size:11px;padding:4px 10px;border-radius:6px;border:1.5px solid var(--g200);background:none;cursor:pointer;color:var(--g400);font-family:'DM Sans',sans-serif;transition:all .15s}
+.ws-btn:hover{border-color:var(--teal);color:var(--teal)}
+.ws-btn.del:hover{border-color:var(--coral);color:var(--coral)}
+
+/* ── WORD EDITOR ── */
+.editor-header{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+.editor-header input{flex:1;font-size:18px;font-weight:600;border:none;border-bottom:2px solid var(--g200);border-radius:0;padding:6px 0}
+.editor-header input:focus{border-bottom-color:var(--teal)}
+.word-table{width:100%;border-collapse:collapse;margin-bottom:16px}
+.word-table th{font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--g400);padding:8px 10px;text-align:left;border-bottom:1.5px solid var(--g100)}
+.word-table td{padding:6px 6px}
+.word-table tr:hover td{background:var(--g50)}
+.word-table td input{border:1.5px solid transparent;background:transparent;padding:7px 10px;border-radius:6px}
+.word-table td input:focus{border-color:var(--teal);background:var(--white)}
+.td-del{width:36px;text-align:center}
+.btn-del-row{width:28px;height:28px;border:none;background:none;color:var(--g300);font-size:18px;cursor:pointer;border-radius:4px;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.btn-del-row:hover{background:var(--coral-l);color:var(--coral)}
+.btn-add-row{width:100%;border:1.5px dashed var(--g200);border-radius:var(--rs);padding:9px;background:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--g400);cursor:pointer;transition:all .2s}
+.btn-add-row:hover{border-color:var(--teal);color:var(--teal)}
+
+/* ── BULK INPUT ── */
+.tabs{display:flex;border-bottom:1.5px solid var(--g100);margin-bottom:20px;gap:4px}
+.tab-btn{padding:8px 18px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--g400);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .18s}
+.tab-btn.active{color:var(--teal);border-bottom-color:var(--teal)}
+.tab-pane{display:none}.tab-pane.active{display:block}
+textarea.bulk{height:200px;resize:vertical;font-size:13px;line-height:1.7;font-family:'Courier New',monospace}
+.bulk-hint{font-size:12px;color:var(--g400);margin-bottom:8px;line-height:1.6}
+
+/* ── STUDENT MANAGEMENT ── */
+.student-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.student-row{display:flex;align-items:center;gap:14px;padding:14px 18px;border:1.5px solid var(--g100);border-radius:var(--r);transition:all .2s}
+.student-row:hover{border-color:var(--g200)}
+.student-avatar{width:36px;height:36px;border-radius:50%;background:var(--teal-l);color:var(--teal-d);font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.student-name{font-weight:600;font-size:14px;flex:1}
+.student-grade{font-size:12px;color:var(--g400)}
+.student-stats{display:flex;gap:16px;margin-left:auto;align-items:center}
+.stu-stat{text-align:center}
+.stu-stat .sn{font-size:16px;font-weight:600;display:block}
+.stu-stat .sl{font-size:10px;color:var(--g400)}
+.stu-stat .sn.teal{color:var(--teal)}
+.stu-stat .sn.coral{color:var(--coral)}
+
+/* ── SCORES TABLE ── */
+.scores-filter{display:flex;gap:10px;margin-bottom:20px;align-items:center}
+.scores-filter select{max-width:200px}
+.scores-table{width:100%;border-collapse:collapse}
+.scores-table th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--g400);padding:10px 12px;text-align:left;border-bottom:1.5px solid var(--g100)}
+.scores-table td{padding:12px 12px;border-bottom:1px solid var(--g50);font-size:13px}
+.scores-table tr:hover td{background:var(--g50)}
+.score-pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.score-pill.hi{background:var(--teal-l);color:var(--teal-d)}
+.score-pill.mid{background:#FFF3CD;color:#856404}
+.score-pill.lo{background:var(--coral-l);color:var(--coral-d)}
+
+/* ── ASSIGN TEST ── */
+.assign-box{border:1.5px solid var(--g100);border-radius:var(--r);padding:20px;margin-bottom:16px}
+.assign-box h3{font-size:14px;font-weight:600;margin-bottom:14px}
+.checkbox-list{display:flex;flex-direction:column;gap:8px}
+.cb-item{display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer}
+.cb-item input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--teal)}
+.mode-select-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+.mode-opt{border:1.5px solid var(--g200);border-radius:var(--rs);padding:12px;text-align:center;cursor:pointer;transition:all .2s;font-size:12px;font-weight:500;color:var(--g700)}
+.mode-opt:hover,.mode-opt.sel{border-color:var(--teal);background:var(--teal-l);color:var(--teal-d)}
+.mode-opt .mo-icon{font-size:20px;display:block;margin-bottom:4px}
+
+/* ── STUDENT: TEST ── */
+.test-header-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.progress-wrap{flex:1;margin:0 20px}
+.prog-info{display:flex;justify-content:space-between;font-size:12px;color:var(--g400);margin-bottom:5px}
+.prog-bar{height:5px;background:var(--g100);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;background:var(--teal);border-radius:3px;transition:width .4s ease}
+.wrong-badge{background:var(--coral-l);color:var(--coral-d);font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;white-space:nowrap}
+.q-type-badge{font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:3px 10px;border-radius:20px;margin-bottom:10px;display:inline-block}
+.q-type-badge.meaning{background:var(--blue-l);color:var(--blue-d)}
+.q-type-badge.spelling{background:var(--teal-l);color:var(--teal-d)}
+.question-card{background:var(--g50);border-radius:var(--r);padding:44px 40px;text-align:center;margin-bottom:24px;min-height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.q-word{font-family:'DM Serif Display',serif;font-size:52px;color:var(--g900);line-height:1.1}
+.q-hint{font-size:13px;color:var(--g400);margin-top:10px}
+.answer-wrap{position:relative;margin-bottom:12px}
+input.answer{border:2px solid var(--g200);border-radius:var(--rs);padding:15px 18px;font-size:18px;width:100%;transition:all .2s}
+input.answer:focus{outline:none;border-color:var(--teal)}
+input.answer.ok{border-color:var(--teal);background:var(--teal-l)}
+input.answer.no{border-color:var(--coral);background:var(--coral-l)}
+.feedback{display:none;align-items:center;gap:8px;font-size:14px;font-weight:500;padding:11px 15px;border-radius:var(--rs);margin-bottom:12px;animation:slideIn .2s ease}
+.feedback.show{display:flex}
+.feedback.ok{background:var(--teal-l);color:var(--teal-d)}
+.feedback.no{background:var(--coral-l);color:var(--coral-d)}
+@keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+.ans-btn-row{display:flex;gap:10px}
+.btn-submit{flex:1;background:var(--g900);color:#fff;border:none;border-radius:var(--rs);padding:14px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:background .2s}
+.btn-submit:hover{background:var(--g700)}
+.btn-skip{background:var(--white);color:var(--g400);border:1.5px solid var(--g200);border-radius:var(--rs);padding:14px 18px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .2s}
+.btn-skip:hover{border-color:var(--coral);color:var(--coral)}
+.wrong-dots{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:16px}
+.wd{width:8px;height:8px;border-radius:50%;background:var(--coral);opacity:.35;transition:all .2s}
+.wd.cur{opacity:1;transform:scale(1.4)}
+
+/* ── RESULT ── */
+.result-hero{text-align:center;padding:48px 0 28px}
+.result-trophy{font-size:64px;display:block;margin-bottom:14px}
+.result-hero h2{font-family:'DM Serif Display',serif;font-size:34px;margin-bottom:6px}
+.result-hero p{font-size:14px;color:var(--g400)}
+.result-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:28px 0}
+.stat-box{background:var(--g50);border-radius:var(--r);padding:20px 12px;text-align:center}
+.stat-num{font-family:'DM Serif Display',serif;font-size:34px;display:block;margin-bottom:3px}
+.stat-num.teal{color:var(--teal)}.stat-num.coral{color:var(--coral)}
+.stat-lbl{font-size:11px;color:var(--g400)}
+.review-sec h3{font-size:13px;font-weight:600;color:var(--g700);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--g100)}
+.review-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--g50);font-size:13px}
+.review-eng{font-weight:500}.review-kor{color:var(--teal-d)}
+
+/* ── STUDENT HOME ── */
+.assigned-card{border:1.5px solid var(--g100);border-radius:var(--r);padding:20px 24px;margin-bottom:14px;display:flex;align-items:center;gap:18px;cursor:pointer;transition:all .2s}
+.assigned-card:hover{border-color:var(--teal);box-shadow:0 2px 12px rgba(29,158,117,.08)}
+.ac-icon{font-size:28px;width:48px;height:48px;background:var(--teal-l);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ac-info{flex:1}
+.ac-name{font-weight:600;font-size:15px;margin-bottom:3px}
+.ac-meta{font-size:12px;color:var(--g400)}
+.ac-arrow{color:var(--g300);font-size:20px}
+.ac-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--teal-l);color:var(--teal-d);white-space:nowrap}
+
+/* ── NOTIF ── */
+.notif{position:fixed;top:76px;right:20px;background:var(--g900);color:#fff;padding:10px 18px;border-radius:var(--rs);font-size:13px;z-index:999;opacity:0;transform:translateX(20px);transition:all .25s;pointer-events:none}
+.notif.show{opacity:1;transform:translateX(0)}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--white);border-radius:var(--r);padding:28px;width:440px;max-width:90vw;animation:fadeUp .2s ease}
+.modal h3{font-size:17px;font-weight:600;margin-bottom:6px}
+.modal p{font-size:13px;color:var(--g400);margin-bottom:20px}
+.modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.modal label{font-size:12px;font-weight:600;color:var(--g400);display:block;margin-bottom:5px;margin-top:12px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:640px){
+  .sidebar{display:none}
+  .content{padding:20px}
+  .result-stats{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">voca<span>in</span></div>
+  <div class="header-right">
+    <span class="mode-pill teacher" id="modePill">선생님 모드</span>
+    <button class="btn-switch" onclick="showSwitchModal()">모드 전환</button>
+  </div>
+</header>
+
+<!-- APP BODY -->
+<div class="app" id="mainApp" style="display:none">
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar">
+    <!-- Teacher nav -->
+    <div id="teacherNav">
+      <div class="sidebar-section">단어 관리</div>
+      <button class="nav-item active" onclick="nav('wordsets')" id="nav-wordsets">
+        <span class="ni">📚</span> 단어 세트
+        <span class="nav-badge" id="nb-wordsets">0</span>
+      </button>
+      <button class="nav-item" onclick="nav('editor')" id="nav-editor">
+        <span class="ni">✏️</span> 단어 편집기
+      </button>
+      <div class="sidebar-section">학생 관리</div>
+      <button class="nav-item" onclick="nav('students')" id="nav-students">
+        <span class="ni">👥</span> 학생 목록
+        <span class="nav-badge" id="nb-students">0</span>
+      </button>
+      <button class="nav-item" onclick="nav('assign')" id="nav-assign">
+        <span class="ni">📋</span> 테스트 출제
+      </button>
+      <div class="sidebar-section">결과</div>
+      <button class="nav-item" onclick="nav('scores')" id="nav-scores">
+        <span class="ni">📊</span> 점수 현황
+      </button>
+    </div>
+    <!-- Student nav -->
+    <div id="studentNav" style="display:none">
+      <div class="sidebar-section">학습</div>
+      <button class="nav-item active" onclick="nav('student-home')" id="nav-student-home">
+        <span class="ni">🏠</span> 홈
+      </button>
+      <button class="nav-item" onclick="nav('student-scores')" id="nav-student-scores">
+        <span class="ni">📊</span> 내 점수
+      </button>
+    </div>
+  </nav>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <div class="content-inner">
+
+      <!-- ══ TEACHER: WORD SETS ══ -->
+      <div class="screen active" id="screen-wordsets">
+        <h2 class="page-title">단어 세트</h2>
+        <p class="page-sub">테스트에 사용할 단어 세트를 만들고 관리합니다.</p>
+        <div class="wordset-grid" id="wordsetGrid"></div>
+      </div>
+
+      <!-- ══ TEACHER: EDITOR ══ -->
+      <div class="screen" id="screen-editor">
+        <div class="editor-header">
+          <button class="btn btn-secondary" onclick="nav('wordsets')" style="flex-shrink:0">← 목록</button>
+          <input type="text" id="setNameInput" placeholder="단어 세트 이름 입력..." style="flex:1;font-size:17px;font-weight:600;border:none;border-bottom:2px solid var(--g200);border-radius:0;padding:6px 0">
+          <button class="btn btn-primary" onclick="saveWordSet()" style="flex-shrink:0">저장</button>
+        </div>
+        <div class="tabs">
+          <button class="tab-btn active" onclick="editorTab('table')">단어별 입력</button>
+          <button class="tab-btn" onclick="editorTab('bulk')">일괄 입력</button>
+          <button class="tab-btn" onclick="editorTab('file')">파일 업로드</button>
+        </div>
+        <div class="tab-pane active" id="ep-table">
+          <table class="word-table">
+            <thead><tr><th>영어 단어</th><th>한국어 뜻</th><th class="td-del"></th></tr></thead>
+            <tbody id="wordTableBody"></tbody>
+          </table>
+          <button class="btn-add-row" onclick="addWordRow()">+ 단어 추가</button>
+        </div>
+        <div class="tab-pane" id="ep-bulk">
+          <p class="bulk-hint">한 줄에 하나씩 입력: <strong>영어단어 = 한국어뜻</strong><br>예) apple = 사과 &nbsp;/&nbsp; banana = 바나나</p>
+          <textarea class="bulk" id="bulkInput" placeholder="apple = 사과&#10;banana = 바나나&#10;computer = 컴퓨터" oninput="syncBulk()"></textarea>
+        </div>
+        <div class="tab-pane" id="ep-file">
+          <div class="upload-area" id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="dov(event)" ondragleave="dol(event)" ondrop="ddr(event)"
+            style="border:2px dashed var(--g200);border-radius:var(--r);padding:48px;text-align:center;cursor:pointer;transition:all .2s;background:var(--g50)">
+            <div style="font-size:40px;margin-bottom:12px">📂</div>
+            <p style="font-size:14px;color:var(--g400)"><strong style="color:var(--teal)">클릭하거나 드래그</strong>해서 파일 업로드</p>
+            <p style="font-size:12px;color:var(--g300);margin-top:6px">Word (.docx) 지원 · 형식: 영어 = 뜻</p>
+          </div>
+          <input type="file" id="fileInput" accept=".docx" style="display:none" onchange="handleFile(event)">
+          <p id="fileStatus" style="font-size:13px;color:var(--g400);margin-top:10px"></p>
+        </div>
+        <div style="margin-top:20px;padding:14px 16px;background:var(--g50);border-radius:var(--rs);font-size:13px;color:var(--g400)" id="editorPreviewInfo">단어 0개 입력됨</div>
+      </div>
+
+      <!-- ══ TEACHER: STUDENTS ══ -->
+      <div class="screen" id="screen-students">
+        <h2 class="page-title">학생 목록</h2>
+        <p class="page-sub">학생을 추가하고 학습 현황을 확인합니다.</p>
+        <div class="student-list" id="studentList"></div>
+        <button class="btn btn-primary" onclick="showAddStudentModal()">+ 학생 추가</button>
+      </div>
+
+      <!-- ══ TEACHER: ASSIGN ══ -->
+      <div class="screen" id="screen-assign">
+        <h2 class="page-title">테스트 출제</h2>
+        <p class="page-sub">학생과 단어 세트, 테스트 방식을 선택해 출제합니다.</p>
+        <div class="assign-box">
+          <h3>① 단어 세트 선택</h3>
+          <div class="checkbox-list" id="assignWordsets"></div>
+        </div>
+        <div class="assign-box">
+          <h3>② 학생 선택</h3>
+          <div style="display:flex;gap:8px;margin-bottom:10px">
+            <button class="btn btn-secondary" onclick="selectAllStudents(true)" style="font-size:12px;padding:5px 12px">전체 선택</button>
+            <button class="btn btn-secondary" onclick="selectAllStudents(false)" style="font-size:12px;padding:5px 12px">전체 해제</button>
+          </div>
+          <div class="checkbox-list" id="assignStudents"></div>
+        </div>
+        <div class="assign-box">
+          <h3>③ 테스트 방식</h3>
+          <div class="mode-select-grid">
+            <div class="mode-opt sel" data-mode="meaning" onclick="selectAssignMode(this)">
+              <span class="mo-icon">🇰🇷</span>뜻 맞추기
+            </div>
+            <div class="mode-opt" data-mode="spelling" onclick="selectAssignMode(this)">
+              <span class="mo-icon">🔤</span>철자 쓰기
+            </div>
+            <div class="mode-opt" data-mode="mixed" onclick="selectAssignMode(this)">
+              <span class="mo-icon">🔀</span>뜻+철자 섞기
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="assignTest()">테스트 출제하기</button>
+      </div>
+
+      <!-- ══ TEACHER: SCORES ══ -->
+      <div class="screen" id="screen-scores">
+        <h2 class="page-title">점수 현황</h2>
+        <p class="page-sub">학생별 테스트 결과를 확인합니다.</p>
+        <div class="scores-filter">
+          <select id="filterStudent" onchange="renderScores()">
+            <option value="">전체 학생</option>
+          </select>
+          <select id="filterWordset" onchange="renderScores()">
+            <option value="">전체 단어세트</option>
+          </select>
+        </div>
+        <table class="scores-table">
+          <thead>
+            <tr>
+              <th>학생</th><th>단어 세트</th><th>방식</th><th>점수</th><th>시도</th><th>날짜</th>
+            </tr>
+          </thead>
+          <tbody id="scoresBody"></tbody>
+        </table>
+        <p id="noScores" style="text-align:center;color:var(--g300);padding:40px;font-size:14px;display:none">아직 테스트 결과가 없습니다</p>
+      </div>
+
+      <!-- ══ STUDENT: HOME ══ -->
+      <div class="screen" id="screen-student-home">
+        <h2 class="page-title" id="stuGreeting">안녕하세요! 👋</h2>
+        <p class="page-sub">선생님이 출제한 테스트를 시작해보세요.</p>
+        <span class="section-label">출제된 테스트</span>
+        <div id="assignedList"></div>
+        <p id="noAssigned" style="color:var(--g300);font-size:14px;text-align:center;padding:40px;display:none">아직 출제된 테스트가 없습니다</p>
+      </div>
+
+      <!-- ══ TEST ══ -->
+      <div class="screen" id="screen-test">
+        <div class="test-header-bar">
+          <button class="btn btn-secondary" onclick="exitTest()" style="padding:7px 14px;font-size:13px">← 나가기</button>
+          <div class="progress-wrap">
+            <div class="prog-info">
+              <span id="progText">0% 완료</span>
+              <span id="progFrac">0 / 0</span>
+            </div>
+            <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+          </div>
+          <div class="wrong-badge" id="wrongBadge" style="display:none">🔄 <span id="wrongCount">0</span>개 복습중</div>
+        </div>
+        <div class="wrong-dots" id="wrongDots"></div>
+        <div class="question-card">
+          <span class="q-type-badge meaning" id="qTypeBadge">뜻 맞추기</span>
+          <div class="q-word" id="qWord">—</div>
+          <div class="q-hint" id="qHint"></div>
+        </div>
+        <div class="answer-wrap">
+          <input class="answer" type="text" id="ansInput" placeholder="정답 입력..." onkeydown="onKey(event)" autocomplete="off" autocorrect="off" spellcheck="false">
+        </div>
+        <div class="feedback" id="feedback"></div>
+        <div class="ans-btn-row">
+          <button class="btn-submit" id="submitBtn" onclick="submitAnswer()">확인</button>
+          <button class="btn-skip" onclick="skipWord()">모르겠어요</button>
+        </div>
+      </div>
+
+      <!-- ══ RESULT ══ -->
+      <div class="screen" id="screen-result">
+        <div class="result-hero">
+          <span class="result-trophy" id="rTrophy">🏆</span>
+          <h2 id="rTitle">테스트 완료!</h2>
+          <p id="rMsg"></p>
+        </div>
+        <div class="result-stats">
+          <div class="stat-box"><span class="stat-num" id="rTotal">0</span><span class="stat-lbl">전체 단어</span></div>
+          <div class="stat-box"><span class="stat-num teal" id="rCorrect">0</span><span class="stat-lbl">첫 시도 정답</span></div>
+          <div class="stat-box"><span class="stat-num coral" id="rWrong">0</span><span class="stat-lbl">틀린 단어</span></div>
+          <div class="stat-box"><span class="stat-num" id="rScore">0%</span><span class="stat-lbl">정답률</span></div>
+        </div>
+        <div class="review-sec" id="reviewSec" style="display:none">
+          <h3>틀렸던 단어 📝</h3>
+          <div id="reviewList"></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:24px">
+          <button class="btn btn-primary btn-lg" onclick="retryTest()">다시 풀기</button>
+          <button class="btn btn-secondary" onclick="exitTest()" style="padding:13px 24px;font-size:14px">돌아가기</button>
+        </div>
+      </div>
+
+      <!-- ══ STUDENT: MY SCORES ══ -->
+      <div class="screen" id="screen-student-scores">
+        <h2 class="page-title">내 점수</h2>
+        <p class="page-sub">지금까지의 테스트 결과입니다.</p>
+        <table class="scores-table">
+          <thead><tr><th>단어 세트</th><th>방식</th><th>점수</th><th>시도</th><th>날짜</th></tr></thead>
+          <tbody id="stuScoresBody"></tbody>
+        </table>
+        <p id="noStuScores" style="text-align:center;color:var(--g300);padding:40px;font-size:14px;display:none">아직 테스트 결과가 없습니다</p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" style="display:flex;align-items:center;justify-content:center;flex:1;min-height:80vh">
+  <div class="login-box">
+    <div style="font-family:'DM Serif Display',serif;font-size:52px;margin-bottom:8px">voca<span style="color:var(--teal)">in</span></div>
+    <p style="font-size:14px;color:var(--g400);margin-bottom:36px">학원용 영어 단어 학습 & 테스트 앱</p>
+    <div class="login-options">
+      <div class="login-card sel" id="lc-teacher" onclick="selectLoginMode('teacher')">
+        <span class="lc-icon">👩‍🏫</span>
+        <h3>선생님</h3>
+        <p>단어 관리 & 출제</p>
+      </div>
+      <div class="login-card" id="lc-student" onclick="selectLoginMode('student')">
+        <span class="lc-icon">👩‍🎓</span>
+        <h3>학생</h3>
+        <p>테스트 응시</p>
+      </div>
+    </div>
+    <div id="loginForm">
+      <div id="teacherLoginForm">
+        <label style="font-size:12px;font-weight:600;color:var(--g400);display:block;margin-bottom:5px">선생님 PIN (기본: 1234)</label>
+        <input type="password" id="teacherPin" placeholder="PIN 입력" maxlength="6" onkeydown="if(event.key==='Enter')doLogin()">
+        <p class="pin-hint" style="font-size:11px;color:var(--g300);margin-top:5px">처음 사용 시 기본 PIN은 1234입니다</p>
+      </div>
+      <div id="studentLoginForm" style="display:none">
+        <label style="font-size:12px;font-weight:600;color:var(--g400);display:block;margin-bottom:5px">이름 선택</label>
+        <select id="studentSelect">
+          <option value="">학생을 선택하세요</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:16px;padding:13px;font-size:15px;font-weight:600;justify-content:center" onclick="doLogin()">시작하기</button>
+      <p id="loginError" style="color:var(--coral);font-size:13px;margin-top:10px;text-align:center;display:none">PIN이 올바르지 않습니다</p>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Student -->
+<div class="modal-overlay" id="modalAddStudent">
+  <div class="modal">
+    <h3>학생 추가</h3>
+    <p>학생 이름과 반을 입력해주세요.</p>
+    <label>이름</label>
+    <input type="text" id="newStudentName" placeholder="홍길동" onkeydown="if(event.key==='Enter')saveNewStudent()">
+    <label>반 / 레벨 (선택)</label>
+    <input type="text" id="newStudentGrade" placeholder="예) A반, 중급">
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal('modalAddStudent')">취소</button>
+      <button class="btn btn-primary" onclick="saveNewStudent()">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Switch Mode -->
+<div class="modal-overlay" id="modalSwitch">
+  <div class="modal">
+    <h3>모드 전환</h3>
+    <p>전환할 모드와 PIN을 입력해주세요.</p>
+    <label>모드</label>
+    <select id="switchModeSelect">
+      <option value="teacher">선생님 모드</option>
+      <option value="student">학생 모드</option>
+    </select>
+    <label>선생님 PIN</label>
+    <input type="password" id="switchPin" placeholder="PIN 입력" onkeydown="if(event.key==='Enter')doSwitchMode()">
+    <p id="switchError" style="color:var(--coral);font-size:13px;margin-top:8px;display:none">PIN이 올바르지 않습니다</p>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal('modalSwitch')">취소</button>
+      <button class="btn btn-primary" onclick="doSwitchMode()">전환</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIF -->
+<div class="notif" id="notif"></div>
+
+<script>
+// ══════════════════════════════════════════════
+//  DATA STORE (localStorage)
+// ══════════════════════════════════════════════
+function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+
+let DB = {
+  get wordSets(){return load('vc_wordsets',[])},
+  saveWordSets(v){save('vc_wordsets',v)},
+  get students(){return load('vc_students',[])},
+  saveStudents(v){save('vc_students',v)},
+  get assignments(){return load('vc_assignments',[])},
+  saveAssignments(v){save('vc_assignments',v)},
+  get scores(){return load('vc_scores',[])},
+  saveScores(v){save('vc_scores',v)},
+  get pin(){return load('vc_pin','1234')},
+  savePin(v){save('vc_pin',v)}
+};
+
+// ══════════════════════════════════════════════
+//  APP STATE
+// ══════════════════════════════════════════════
+let currentMode = 'teacher'; // 'teacher' | 'student'
+let currentStudent = null;
+let editingSetId = null;
+let editorWords = [];
+let editorTabCurrent = 'table';
+let assignMode = 'meaning';
+let loginMode = 'teacher';
+
+// Test state
+let testQueue = [];
+let testWrongSet = new Set();
+let testAnswered = new Set();
+let testCorrectFirst = 0;
+let testTotalAttempts = 0;
+let testCurrentIdx = 0;
+let testCurrentWord = null;
+let testShowingFeedback = false;
+let testWordModes = {}; // word.english -> 'meaning' | 'spelling'
+let testTotalWords = 0;
+let testAssignment = null;
+let testWrongWordsEver = new Set();
+
+// ══════════════════════════════════════════════
+//  LOGIN
+// ══════════════════════════════════════════════
+function selectLoginMode(m) {
+  loginMode = m;
+  document.getElementById('lc-teacher').classList.toggle('sel', m==='teacher');
+  document.getElementById('lc-student').classList.toggle('sel', m==='student');
+  document.getElementById('teacherLoginForm').style.display = m==='teacher'?'block':'none';
+  document.getElementById('studentLoginForm').style.display = m==='student'?'block':'none';
+  if(m==='student') populateStudentSelect();
+}
+
+function populateStudentSelect() {
+  const sel = document.getElementById('studentSelect');
+  sel.innerHTML = '<option value="">학생을 선택하세요</option>';
+  DB.students.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id; o.textContent = s.name + (s.grade?' ('+s.grade+')':'');
+    sel.appendChild(o);
+  });
+}
+
+function doLogin() {
+  document.getElementById('loginError').style.display='none';
+  if(loginMode==='teacher') {
+    const pin = document.getElementById('teacherPin').value;
+    if(pin !== DB.pin) { document.getElementById('loginError').style.display='block'; return; }
+    currentMode='teacher'; currentStudent=null;
+    enterApp();
+  } else {
+    const sid = document.getElementById('studentSelect').value;
+    if(!sid) { showNotif('학생을 선택해주세요'); return; }
+    const stu = DB.students.find(s=>s.id===sid);
+    if(!stu) return;
+    currentMode='student'; currentStudent=stu;
+    enterApp();
+  }
+}
+
+function enterApp() {
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('mainApp').style.display='flex';
+  setModeUI();
+  if(currentMode==='teacher') { nav('wordsets'); }
+  else { nav('student-home'); }
+}
+
+function setModeUI() {
+  const isT = currentMode==='teacher';
+  document.getElementById('modePill').textContent = isT?'선생님 모드':'학생 모드 — '+(currentStudent?.name||'');
+  document.getElementById('modePill').className = 'mode-pill '+(isT?'teacher':'student');
+  document.getElementById('teacherNav').style.display = isT?'block':'none';
+  document.getElementById('studentNav').style.display = isT?'none':'block';
+  updateSidebarBadges();
+}
+
+function showSwitchModal() {
+  document.getElementById('switchPin').value='';
+  document.getElementById('switchError').style.display='none';
+  document.getElementById('switchModeSelect').value = currentMode==='teacher'?'student':'teacher';
+  openModal('modalSwitch');
+}
+
+function doSwitchMode() {
+  const pin = document.getElementById('switchPin').value;
+  const target = document.getElementById('switchModeSelect').value;
+  if(pin !== DB.pin) { document.getElementById('switchError').style.display='block'; return; }
+  closeModal('modalSwitch');
+  if(target==='student') {
+    // pick student
+    if(DB.students.length===0) { showNotif('먼저 학생을 추가해주세요'); return; }
+    // show student picker
+    const names = DB.students.map(s=>s.name);
+    const chosen = prompt('학생 이름을 입력하세요:\n'+names.join(', '));
+    const stu = DB.students.find(s=>s.name===chosen);
+    if(!stu) { showNotif('학생을 찾을 수 없습니다'); return; }
+    currentMode='student'; currentStudent=stu;
+  } else {
+    currentMode='teacher'; currentStudent=null;
+  }
+  setModeUI();
+  if(currentMode==='teacher') nav('wordsets');
+  else nav('student-home');
+}
+
+// ══════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════
+function nav(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  const ni = document.getElementById('nav-'+id);
+  if(ni) ni.classList.add('active');
+  // refresh
+  if(id==='wordsets') renderWordSets();
+  if(id==='students') renderStudents();
+  if(id==='assign') renderAssign();
+  if(id==='scores') renderScores();
+  if(id==='student-home') renderStudentHome();
+  if(id==='student-scores') renderStudentScores();
+}
+
+function updateSidebarBadges() {
+  const ws=DB.wordSets; const stu=DB.students;
+  document.getElementById('nb-wordsets').textContent=ws.length;
+  document.getElementById('nb-students').textContent=stu.length;
+}
+
+// ══════════════════════════════════════════════
+//  WORD SETS
+// ══════════════════════════════════════════════
+function renderWordSets() {
+  const sets = DB.wordSets;
+  const grid = document.getElementById('wordsetGrid');
+  grid.innerHTML='';
+  sets.forEach(ws => {
+    const d = document.createElement('div');
+    d.className='wordset-card';
+    d.innerHTML=`
+      <div class="ws-name">${ws.name}</div>
+      <div class="ws-count">${ws.words.length}개 단어</div>
+      <div class="ws-date">${ws.date||''}</div>
+      <div class="wordset-actions">
+        <button class="ws-btn" onclick="editWordSet('${ws.id}')">편집</button>
+        <button class="ws-btn del" onclick="deleteWordSet('${ws.id}',event)">삭제</button>
+      </div>`;
+    grid.appendChild(d);
+  });
+  const add = document.createElement('div');
+  add.className='wordset-card add-new';
+  add.innerHTML='<div style="font-size:28px">+</div><div style="font-size:13px;font-weight:500">새 단어 세트</div>';
+  add.onclick=()=>newWordSet();
+  grid.appendChild(add);
+  updateSidebarBadges();
+}
+
+function newWordSet() {
+  editingSetId = null;
+  editorWords = [{english:'',meaning:''}];
+  document.getElementById('setNameInput').value='';
+  renderWordTable();
+  nav('editor');
+}
+
+function editWordSet(id) {
+  const ws = DB.wordSets.find(s=>s.id===id);
+  if(!ws) return;
+  editingSetId=id;
+  editorWords=[...ws.words.map(w=>({...w}))];
+  document.getElementById('setNameInput').value=ws.name;
+  renderWordTable();
+  nav('editor');
+}
+
+function deleteWordSet(id,e) {
+  e.stopPropagation();
+  if(!confirm('이 단어 세트를 삭제할까요?')) return;
+  const sets = DB.wordSets.filter(s=>s.id!==id);
+  DB.saveWordSets(sets);
+  renderWordSets();
+  showNotif('삭제되었습니다');
+}
+
+function saveWordSet() {
+  const name = document.getElementById('setNameInput').value.trim();
+  if(!name) { showNotif('단어 세트 이름을 입력해주세요'); return; }
+  syncEditorWords();
+  const valid = editorWords.filter(w=>w.english.trim()&&w.meaning.trim());
+  if(valid.length===0) { showNotif('단어를 최소 1개 이상 입력해주세요'); return; }
+  const sets = DB.wordSets;
+  if(editingSetId) {
+    const idx = sets.findIndex(s=>s.id===editingSetId);
+    if(idx>=0) { sets[idx].name=name; sets[idx].words=valid; sets[idx].date=today(); }
+  } else {
+    sets.push({id:uid(),name,words:valid,date:today()});
+  }
+  DB.saveWordSets(sets);
+  showNotif('저장되었습니다 ✓');
+  nav('wordsets');
+}
+
+// ── EDITOR ──
+function editorTab(t) {
+  editorTabCurrent=t;
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>{
+    b.classList.toggle('active',['table','bulk','file'][i]===t);
+  });
+  ['table','bulk','file'].forEach(k=>{
+    document.getElementById('ep-'+k).classList.toggle('active',k===t);
+  });
+  if(t==='bulk') syncTableToBulk();
+  if(t==='table') syncBulkToTable();
+  updateEditorInfo();
+}
+
+function renderWordTable() {
+  const tbody=document.getElementById('wordTableBody');
+  tbody.innerHTML='';
+  editorWords.forEach((w,i)=>addWordRowAt(i));
+  updateEditorInfo();
+}
+
+function addWordRow() {
+  editorWords.push({english:'',meaning:''});
+  addWordRowAt(editorWords.length-1);
+  updateEditorInfo();
+}
+
+function addWordRowAt(i) {
+  const tbody=document.getElementById('wordTableBody');
+  const tr=document.createElement('tr');
+  tr.dataset.idx=i;
+  tr.innerHTML=`
+    <td><input type="text" value="${editorWords[i].english||''}" placeholder="apple" oninput="editorWords[${i}].english=this.value;updateEditorInfo()"></td>
+    <td><input type="text" value="${editorWords[i].meaning||''}" placeholder="사과" oninput="editorWords[${i}].meaning=this.value;updateEditorInfo()"></td>
+    <td class="td-del"><button class="btn-del-row" onclick="removeWordRow(${i})">×</button></td>`;
+  tbody.appendChild(tr);
+}
+
+function removeWordRow(i) {
+  if(editorWords.length<=1) return;
+  editorWords.splice(i,1);
+  renderWordTable();
+}
+
+function syncEditorWords() {
+  if(editorTabCurrent==='bulk') syncBulkToTable();
+}
+
+function syncBulk() {
+  syncBulkToTable();
+  updateEditorInfo();
+}
+
+function syncBulkToTable() {
+  const text=document.getElementById('bulkInput').value;
+  editorWords=[];
+  text.split('\n').forEach(line=>{
+    const p=line.split(/[=\-\/|]+/);
+    if(p.length>=2){
+      const e=p[0].trim(),m=p[1].trim();
+      if(e&&m) editorWords.push({english:e,meaning:m});
+    }
+  });
+  if(editorWords.length===0) editorWords=[{english:'',meaning:''}];
+}
+
+function syncTableToBulk() {
+  document.getElementById('bulkInput').value=editorWords.filter(w=>w.english||w.meaning).map(w=>w.english+' = '+w.meaning).join('\n');
+}
+
+function updateEditorInfo() {
+  const valid=editorWords.filter(w=>w.english.trim()&&w.meaning.trim()).length;
+  document.getElementById('editorPreviewInfo').textContent='단어 '+valid+'개 입력됨';
+}
+
+// File
+function dov(e){e.preventDefault();document.getElementById('dropZone').style.borderColor='var(--teal)'}
+function dol(){document.getElementById('dropZone').style.borderColor='var(--g200)'}
+function ddr(e){e.preventDefault();dol();const f=e.dataTransfer.files[0];if(f)processDocx(f)}
+function handleFile(e){const f=e.target.files[0];if(f)processDocx(f)}
+function processDocx(file) {
+  const status=document.getElementById('fileStatus');
+  status.textContent='파일 분석 중...';
+  const r=new FileReader();
+  r.onload=function(e){
+    mammoth.extractRawText({arrayBuffer:e.target.result}).then(res=>{
+      editorWords=[];
+      res.value.split('\n').forEach(line=>{
+        const p=line.split(/[=\-\/|:]+/);
+        if(p.length>=2){const e=p[0].trim().replace(/^\d+[\.\)]\s*/,''),m=p[1].trim();if(e&&m&&e.length<60)editorWords.push({english:e,meaning:m});}
+      });
+      if(editorWords.length===0){status.textContent='단어를 찾지 못했습니다. 형식을 확인해주세요.';return;}
+      status.textContent='✓ '+editorWords.length+'개 단어를 불러왔습니다.';
+      updateEditorInfo();
+    }).catch(()=>status.textContent='파일 읽기 실패');
+  };
+  r.readAsArrayBuffer(file);
+}
+
+// ══════════════════════════════════════════════
+//  STUDENTS
+// ══════════════════════════════════════════════
+function renderStudents() {
+  const list=document.getElementById('studentList');
+  const students=DB.students;
+  list.innerHTML='';
+  if(students.length===0){
+    list.innerHTML='<p style="color:var(--g300);font-size:14px;padding:20px 0">아직 학생이 없습니다. 아래 버튼으로 추가하세요.</p>';
+    return;
+  }
+  const scores=DB.scores;
+  students.forEach(s=>{
+    const myScores=scores.filter(sc=>sc.studentId===s.id);
+    const avg=myScores.length?Math.round(myScores.reduce((a,b)=>a+b.pct,0)/myScores.length):null;
+    const d=document.createElement('div');
+    d.className='student-row';
+    d.innerHTML=`
+      <div class="student-avatar">${s.name[0]}</div>
+      <div>
+        <div class="student-name">${s.name}</div>
+        <div class="student-grade">${s.grade||'반 미지정'}</div>
+      </div>
+      <div class="student-stats">
+        <div class="stu-stat"><span class="sn">${myScores.length}</span><span class="sl">테스트</span></div>
+        <div class="stu-stat"><span class="sn teal">${avg!==null?avg+'%':'—'}</span><span class="sl">평균</span></div>
+        <button class="btn btn-danger" style="font-size:12px;padding:5px 10px" onclick="deleteStudent('${s.id}')">삭제</button>
+      </div>`;
+    list.appendChild(d);
+  });
+  updateSidebarBadges();
+}
+
+function showAddStudentModal() { openModal('modalAddStudent'); document.getElementById('newStudentName').focus(); }
+function saveNewStudent() {
+  const name=document.getElementById('newStudentName').value.trim();
+  const grade=document.getElementById('newStudentGrade').value.trim();
+  if(!name){showNotif('이름을 입력해주세요');return;}
+  const students=DB.students;
+  students.push({id:uid(),name,grade});
+  DB.saveStudents(students);
+  closeModal('modalAddStudent');
+  document.getElementById('newStudentName').value='';
+  document.getElementById('newStudentGrade').value='';
+  renderStudents();
+  showNotif('학생이 추가되었습니다 ✓');
+}
+
+function deleteStudent(id) {
+  if(!confirm('이 학생을 삭제할까요? 점수 기록도 삭제됩니다.')) return;
+  DB.saveStudents(DB.students.filter(s=>s.id!==id));
+  DB.saveScores(DB.scores.filter(sc=>sc.studentId!==id));
+  renderStudents();
+  showNotif('삭제되었습니다');
+}
+
+// ══════════════════════════════════════════════
+//  ASSIGN
+// ══════════════════════════════════════════════
+function renderAssign() {
+  const wsList=document.getElementById('assignWordsets');
+  wsList.innerHTML='';
+  DB.wordSets.forEach(ws=>{
+    wsList.innerHTML+=`<label class="cb-item"><input type="checkbox" value="${ws.id}"> ${ws.name} (${ws.words.length}개)</label>`;
+  });
+  if(DB.wordSets.length===0) wsList.innerHTML='<p style="color:var(--g300);font-size:13px">단어 세트를 먼저 만들어주세요</p>';
+
+  const stuList=document.getElementById('assignStudents');
+  stuList.innerHTML='';
+  DB.students.forEach(s=>{
+    stuList.innerHTML+=`<label class="cb-item"><input type="checkbox" value="${s.id}" checked> ${s.name}${s.grade?' ('+s.grade+')':''}</label>`;
+  });
+  if(DB.students.length===0) stuList.innerHTML='<p style="color:var(--g300);font-size:13px">학생을 먼저 추가해주세요</p>';
+}
+
+function selectAllStudents(v) {
+  document.querySelectorAll('#assignStudents input[type=checkbox]').forEach(cb=>cb.checked=v);
+}
+
+function selectAssignMode(el) {
+  document.querySelectorAll('.mode-opt').forEach(m=>m.classList.remove('sel'));
+  el.classList.add('sel');
+  assignMode=el.dataset.mode;
+}
+
+function assignTest() {
+  const wsIds=[...document.querySelectorAll('#assignWordsets input:checked')].map(c=>c.value);
+  const stuIds=[...document.querySelectorAll('#assignStudents input:checked')].map(c=>c.value);
+  if(!wsIds.length){showNotif('단어 세트를 선택해주세요');return;}
+  if(!stuIds.length){showNotif('학생을 선택해주세요');return;}
+  const assignments=DB.assignments;
+  // merge words
+  const allWords=[];
+  wsIds.forEach(id=>{const ws=DB.wordSets.find(s=>s.id===id);if(ws)allWords.push(...ws.words);});
+  const unique=[...new Map(allWords.map(w=>[w.english,w])).values()];
+  stuIds.forEach(sid=>{
+    assignments.push({id:uid(),studentId:sid,wsIds,words:unique,mode:assignMode,date:today(),done:false});
+  });
+  DB.saveAssignments(assignments);
+  showNotif(`${stuIds.length}명에게 ${unique.length}개 단어 출제 완료 ✓`);
+}
+
+// ══════════════════════════════════════════════
+//  SCORES
+// ══════════════════════════════════════════════
+function renderScores() {
+  const scores=DB.scores;
+  // populate filters
+  const fStu=document.getElementById('filterStudent');
+  const fWs=document.getElementById('filterWordset');
+  const curStu=fStu.value; const curWs=fWs.value;
+  fStu.innerHTML='<option value="">전체 학생</option>';
+  DB.students.forEach(s=>{fStu.innerHTML+=`<option value="${s.id}" ${s.id===curStu?'selected':''}>${s.name}</option>`;});
+  fWs.innerHTML='<option value="">전체 단어세트</option>';
+  DB.wordSets.forEach(ws=>{fWs.innerHTML+=`<option value="${ws.id}" ${ws.id===curWs?'selected':''}>${ws.name}</option>`;});
+  fStu.value=curStu; fWs.value=curWs;
+
+  let filtered=scores;
+  if(fStu.value) filtered=filtered.filter(s=>s.studentId===fStu.value);
+  if(fWs.value) filtered=filtered.filter(s=>s.wsIds&&s.wsIds.includes(fWs.value));
+  filtered=filtered.slice().reverse();
+
+  const tbody=document.getElementById('scoresBody');
+  tbody.innerHTML='';
+  document.getElementById('noScores').style.display=filtered.length?'none':'block';
+  filtered.forEach(sc=>{
+    const stu=DB.students.find(s=>s.id===sc.studentId);
+    const cls=sc.pct>=80?'hi':sc.pct>=60?'mid':'lo';
+    const modeLabel={'meaning':'뜻 맞추기','spelling':'철자 쓰기','mixed':'뜻+철자 섞기'}[sc.mode]||sc.mode;
+    tbody.innerHTML+=`<tr>
+      <td>${stu?stu.name:'알 수 없음'}</td>
+      <td>${sc.wsName||'—'}</td>
+      <td>${modeLabel}</td>
+      <td><span class="score-pill ${cls}">${sc.pct}%</span></td>
+      <td>${sc.correct}/${sc.total}</td>
+      <td>${sc.date||''}</td>
+    </tr>`;
+  });
+}
+
+// ══════════════════════════════════════════════
+//  STUDENT HOME
+// ══════════════════════════════════════════════
+function renderStudentHome() {
+  if(!currentStudent) return;
+  document.getElementById('stuGreeting').textContent='안녕하세요, '+currentStudent.name+'님! 👋';
+  const assignments=DB.assignments.filter(a=>a.studentId===currentStudent.id);
+  const list=document.getElementById('assignedList');
+  list.innerHTML='';
+  if(!assignments.length){document.getElementById('noAssigned').style.display='block';return;}
+  document.getElementById('noAssigned').style.display='none';
+  assignments.slice().reverse().forEach(a=>{
+    const modeLabel={'meaning':'뜻 맞추기','spelling':'철자 쓰기','mixed':'뜻+철자 섞기'}[a.mode]||a.mode;
+    const myScore=DB.scores.filter(sc=>sc.assignmentId===a.id);
+    const d=document.createElement('div');
+    d.className='assigned-card';
+    d.innerHTML=`
+      <div class="ac-icon">📝</div>
+      <div class="ac-info">
+        <div class="ac-name">${a.words.length}개 단어 테스트</div>
+        <div class="ac-meta">${modeLabel} · ${a.date}</div>
+      </div>
+      ${myScore.length?`<span class="ac-badge">완료 ${myScore[myScore.length-1].pct}%</span>`:''}
+      <span class="ac-arrow">›</span>`;
+    d.onclick=()=>startAssignedTest(a);
+    list.appendChild(d);
+  });
+}
+
+function renderStudentScores() {
+  if(!currentStudent) return;
+  const scores=DB.scores.filter(sc=>sc.studentId===currentStudent.id).reverse();
+  const tbody=document.getElementById('stuScoresBody');
+  tbody.innerHTML='';
+  document.getElementById('noStuScores').style.display=scores.length?'none':'block';
+  scores.forEach(sc=>{
+    const cls=sc.pct>=80?'hi':sc.pct>=60?'mid':'lo';
+    const modeLabel={'meaning':'뜻 맞추기','spelling':'철자 쓰기','mixed':'뜻+철자 섞기'}[sc.mode]||sc.mode;
+    tbody.innerHTML+=`<tr>
+      <td>${sc.wsName||'—'}</td>
+      <td>${modeLabel}</td>
+      <td><span class="score-pill ${cls}">${sc.pct}%</span></td>
+      <td>${sc.correct}/${sc.total}</td>
+      <td>${sc.date||''}</td>
+    </tr>`;
+  });
+}
+
+// ══════════════════════════════════════════════
+//  TEST ENGINE
+// ══════════════════════════════════════════════
+function startAssignedTest(assignment) {
+  testAssignment=assignment;
+  initTest(assignment.words, assignment.mode);
+}
+
+function initTest(words, mode) {
+  const shuffled=[...words].sort(()=>Math.random()-.5);
+  testQueue=[...shuffled];
+  testWrongSet=new Set();
+  testAnswered=new Set();
+  testCorrectFirst=0;
+  testTotalAttempts=0;
+  testCurrentIdx=0;
+  testTotalWords=words.length;
+  testShowingFeedback=false;
+  testWrongWordsEver=new Set();
+  // assign question types
+  testWordModes={};
+  words.forEach(w=>{
+    if(mode==='mixed') testWordModes[w.english]=Math.random()<.5?'meaning':'spelling';
+    else testWordModes[w.english]=mode;
+  });
+  nav('test');
+  loadQuestion();
+}
+
+function loadQuestion() {
+  testShowingFeedback=false;
+  document.getElementById('ansInput').value='';
+  document.getElementById('ansInput').className='answer';
+  document.getElementById('feedback').className='feedback';
+  document.getElementById('submitBtn').textContent='확인';
+
+  if(testCurrentIdx>=testQueue.length) {
+    if(testWrongSet.size===0){ showTestResult(); return; }
+    const wrongList=[...testWrongSet].map(e=>testAssignment.words.find(w=>w.english===e)||{english:e,meaning:''}).filter(w=>w.meaning);
+    testQueue=wrongList.sort(()=>Math.random()-.5);
+    // reassign mixed modes for wrong words
+    if(testAssignment&&testAssignment.mode==='mixed'){
+      wrongList.forEach(w=>{testWordModes[w.english]=Math.random()<.5?'meaning':'spelling';});
+    }
+    testCurrentIdx=0;
+    updateWrongDots();
+  }
+
+  testCurrentWord=testQueue[testCurrentIdx];
+  if(!testCurrentWord){testCurrentIdx++;loadQuestion();return;}
+  const qMode=testWordModes[testCurrentWord.english]||'meaning';
+  const badge=document.getElementById('qTypeBadge');
+  if(qMode==='meaning'){
+    badge.textContent='뜻 맞추기';badge.className='q-type-badge meaning';
+    document.getElementById('qWord').textContent=testCurrentWord.english;
+    document.getElementById('qHint').textContent='한국어 뜻을 입력하세요';
+    document.getElementById('ansInput').placeholder='한국어 뜻...';
+  } else {
+    badge.textContent='철자 쓰기';badge.className='q-type-badge spelling';
+    document.getElementById('qWord').textContent=testCurrentWord.meaning;
+    document.getElementById('qHint').textContent='영어 단어를 입력하세요';
+    document.getElementById('ansInput').placeholder='영어 단어...';
+  }
+  updateProgress();
+  updateWrongDots();
+  document.getElementById('wrongBadge').style.display=testWrongSet.size?'block':'none';
+  document.getElementById('wrongCount').textContent=testWrongSet.size;
+  setTimeout(()=>document.getElementById('ansInput').focus(),50);
+}
+
+function norm(s){return s.trim().toLowerCase().replace(/\s+/g,' ');}
+
+function checkAns(input) {
+  const qMode=testWordModes[testCurrentWord.english]||'meaning';
+  const answer=qMode==='meaning'?testCurrentWord.meaning:testCurrentWord.english;
+  return answer.split(/[,\/;]/).map(a=>norm(a)).some(a=>norm(input)===a||norm(input)===a.replace(/[()[\]]/g,'').trim());
+}
+
+function submitAnswer() {
+  if(testShowingFeedback){testCurrentIdx++;loadQuestion();return;}
+  const input=document.getElementById('ansInput').value.trim();
+  if(!input) return;
+  testTotalAttempts++;
+  const ok=checkAns(input);
+  const qMode=testWordModes[testCurrentWord.english]||'meaning';
+  const correctAns=qMode==='meaning'?testCurrentWord.meaning:testCurrentWord.english;
+  const fb=document.getElementById('feedback');
+  if(ok){
+    document.getElementById('ansInput').classList.add('ok');
+    fb.className='feedback ok show';fb.textContent='✓ 정답!';
+    if(!testAnswered.has(testCurrentWord.english)){testCorrectFirst++;testAnswered.add(testCurrentWord.english);}
+    testWrongSet.delete(testCurrentWord.english);
+    document.getElementById('submitBtn').textContent='다음 →';
+  } else {
+    document.getElementById('ansInput').classList.add('no');
+    fb.className='feedback no show';fb.textContent='✗ 정답: '+correctAns;
+    testWrongSet.add(testCurrentWord.english);
+    testWrongWordsEver.add(testCurrentWord.english);
+    document.getElementById('submitBtn').textContent='계속 →';
+  }
+  testShowingFeedback=true;
+  document.getElementById('wrongBadge').style.display=testWrongSet.size?'block':'none';
+  document.getElementById('wrongCount').textContent=testWrongSet.size;
+}
+
+function skipWord() {
+  const qMode=testWordModes[testCurrentWord.english]||'meaning';
+  const ans=qMode==='meaning'?testCurrentWord.meaning:testCurrentWord.english;
+  document.getElementById('ansInput').classList.add('no');
+  const fb=document.getElementById('feedback');
+  fb.className='feedback no show';fb.textContent='정답: '+ans;
+  testTotalAttempts++;
+  testWrongSet.add(testCurrentWord.english);
+  testWrongWordsEver.add(testCurrentWord.english);
+  testShowingFeedback=true;
+  document.getElementById('submitBtn').textContent='계속 →';
+  document.getElementById('wrongBadge').style.display='block';
+  document.getElementById('wrongCount').textContent=testWrongSet.size;
+}
+
+function onKey(e){if(e.key==='Enter')submitAnswer();}
+
+function updateProgress() {
+  const done=testAnswered.size;
+  const pct=testTotalWords>0?Math.round(done/testTotalWords*100):0;
+  document.getElementById('progFill').style.width=pct+'%';
+  document.getElementById('progText').textContent=pct+'% 완료';
+  document.getElementById('progFrac').textContent=done+' / '+testTotalWords;
+}
+
+function updateWrongDots() {
+  const el=document.getElementById('wrongDots');
+  if(!testWrongSet.size){el.innerHTML='';return;}
+  const remaining=testQueue.slice(testCurrentIdx).filter(w=>testWrongSet.has(w.english));
+  el.innerHTML=remaining.map((w,i)=>`<div class="wd${i===0?' cur':''}" title="${w.english}"></div>`).join('');
+}
+
+function showTestResult() {
+  const total=testTotalWords;
+  const pct=Math.round(testCorrectFirst/total*100);
+  document.getElementById('rTotal').textContent=total;
+  document.getElementById('rCorrect').textContent=testCorrectFirst;
+  document.getElementById('rWrong').textContent=testWrongWordsEver.size;
+  document.getElementById('rScore').textContent=pct+'%';
+  if(pct===100){document.getElementById('rTrophy').textContent='🏆';document.getElementById('rTitle').textContent='완벽해요!';document.getElementById('rMsg').textContent='모든 단어를 첫 시도에 맞췄습니다!';}
+  else if(pct>=70){document.getElementById('rTrophy').textContent='🎉';document.getElementById('rTitle').textContent='잘 했어요!';document.getElementById('rMsg').textContent=pct+'% 정답률 — 조금만 더 연습하면 완벽해질 거예요!';}
+  else{document.getElementById('rTrophy').textContent='💪';document.getElementById('rTitle').textContent='계속 도전!';document.getElementById('rMsg').textContent=pct+'% 정답률 — 반복이 실력을 만듭니다!';}
+
+  // Wrong words review
+  if(testWrongWordsEver.size>0){
+    document.getElementById('reviewSec').style.display='block';
+    const words=testAssignment?testAssignment.words:[];
+    document.getElementById('reviewList').innerHTML=[...testWrongWordsEver].map(e=>{
+      const w=words.find(x=>x.english===e)||{english:e,meaning:''};
+      return `<div class="review-row"><span class="review-eng">${w.english}</span><span class="review-kor">${w.meaning}</span></div>`;
+    }).join('');
+  } else document.getElementById('reviewSec').style.display='none';
+
+  // Save score
+  if(currentStudent&&testAssignment){
+    const scores=DB.scores;
+    const wsName=DB.wordSets.filter(ws=>testAssignment.wsIds.includes(ws.id)).map(ws=>ws.name).join(', ')||'단어세트';
+    scores.push({
+      id:uid(),studentId:currentStudent.id,assignmentId:testAssignment.id,
+      wsIds:testAssignment.wsIds,wsName,mode:testAssignment.mode,
+      correct:testCorrectFirst,total,pct,attempts:testTotalAttempts,date:today()
+    });
+    DB.saveScores(scores);
+  }
+  nav('result');
+}
+
+function retryTest() {
+  if(testAssignment) startAssignedTest(testAssignment);
+}
+
+function exitTest() {
+  if(currentMode==='student') nav('student-home');
+  else nav('wordsets');
+}
+
+// ══════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function today(){return new Date().toLocaleDateString('ko-KR');}
+function showNotif(msg){
+  const n=document.getElementById('notif');
+  n.textContent=msg;n.classList.add('show');
+  setTimeout(()=>n.classList.remove('show'),2600);
+}
+function openModal(id){document.getElementById(id).classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');});
+});
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+// Populate student select on load
+populateStudentSelect();
+</script>
+</body>
+</html>
